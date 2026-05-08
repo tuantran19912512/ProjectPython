@@ -18,7 +18,7 @@ Set-Location $workDir
 $t = (Get-Date -UFormat %s)
 $menuUrl = "https://raw.githubusercontent.com/tuantran19912512/ProjectPython/refs/heads/main/menu.py?t=$t"
 $winUrl = "https://raw.githubusercontent.com/tuantran19912512/quickinstallwindows/refs/heads/main/quickinstall.py?t=$t"
-$winmanualUrl="https://raw.githubusercontent.com/tuantran19912512/caiwin/refs/heads/main/C%C3%A0i%20Win%20V4.ps1=$t"
+$winmanualUrl="https://raw.githubusercontent.com/tuantran19912512/caiwin/refs/heads/main/caiwinv4.ps1=$t"
 $officeUrl = "https://raw.githubusercontent.com/tuantran19912512/pythonoffice/refs/heads/main/officedeploy.py?t=$t"
 $officeGoogleUrl = "https://raw.githubusercontent.com/tuantran19912512/caioffice/main/officegoogle.ps1?t=$t"
 
@@ -78,7 +78,7 @@ $windowLoad.Add_ContentRendered({
         # để ép hệ thống lưu file chuẩn tiếng Việt (có BOM), sửa triệt để lỗi vỡ font
         Invoke-RestMethod -Uri $menuUrl | Out-File -FilePath "menu.py" -Encoding UTF8
         Invoke-RestMethod -Uri $winUrl | Out-File -FilePath "quickinstall.py" -Encoding UTF8
-		Invoke-RestMethod -Uri $winmanualUrl | Out-File -FilePath "Cài Win V4.ps1" -Encoding UTF8
+		Invoke-RestMethod -Uri $winmanualUrl | Out-File -FilePath "caiwinv4.ps1" -Encoding UTF8
         Invoke-RestMethod -Uri $officeUrl | Out-File -FilePath "officedeploy.py" -Encoding UTF8
         Invoke-RestMethod -Uri $officeGoogleUrl | Out-File -FilePath "officegoogle.ps1" -Encoding UTF8
 
