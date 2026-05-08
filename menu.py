@@ -52,23 +52,29 @@ class VietToolbox(ctk.CTk):
         self.withdraw() 
         
         try:
-            # KIỂM TRA ĐỊNH DẠNG FILE
             if script_name.endswith('.ps1'):
-                # Cách chạy file PowerShell (ẩn cửa sổ)
                 subprocess.run(
                     ["powershell", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", script_name],
                     creationflags=subprocess.CREATE_NO_WINDOW,
+                    capture_output=True, text=True, errors='replace', # Thêm lệnh bắt lỗi
                     check=True
                 )
             else:
-                # Cách chạy file Python (ẩn cửa sổ)
                 subprocess.run(
                     [sys.executable, script_name], 
                     creationflags=subprocess.CREATE_NO_WINDOW,
+                    capture_output=True, text=True, errors='replace', # Thêm lệnh bắt lỗi
                     check=True
                 )
         except subprocess.CalledProcessError as e:
-            messagebox.showerror("Cảnh báo", f"Kịch bản đóng với mã lỗi: {e.returncode}")
+            # Lấy thông báo lỗi thực tế từ kịch bản con
+            loi_chi_tiet = e.stderr.strip() if e.stderr else "Lỗi không xác định."
+            
+            # Hiển thị chi tiết lỗi lên bảng thông báo
+            messagebox.showerror(
+                "Kịch bản thất bại", 
+                f"Kịch bản đóng với mã lỗi: {e.returncode}\n\n[CHI TIẾT LỖI TỪ HỆ THỐNG]:\n{loi_chi_tiet}"
+            )
         except Exception as e:
             messagebox.showerror("Lỗi", f"Có lỗi xảy ra:\n{e}")
         finally:
