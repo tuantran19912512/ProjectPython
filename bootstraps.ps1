@@ -46,9 +46,15 @@ $windowLoad.Add_ContentRendered({
             $link_kem_chong_cache = $muc.link_tai + "?t=$t"
             Invoke-RestMethod -Uri $link_kem_chong_cache | Out-File -FilePath $muc.ten_file -Encoding UTF8
         }
-    } catch {
-        Update-Progress 80 "Lỗi kết nối máy chủ!"
-        Start-Sleep -Seconds 3; $windowLoad.Close(); exit
+   } catch {
+        # Bắt và in ra lỗi chi tiết từ hệ thống
+        $loi_chi_tiet = $_.Exception.Message
+        Update-Progress 80 "LỖI: $loi_chi_tiet"
+        
+        # Tăng thời gian chờ lên 10 giây để Tuấn kịp đọc chữ
+        Start-Sleep -Seconds 10
+        $windowLoad.Close()
+        exit
     }
 
     Update-Progress 100 "Đang bật bảng điều khiển..."
