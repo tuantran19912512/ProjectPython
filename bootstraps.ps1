@@ -36,25 +36,25 @@ $windowLoad.Add_ContentRendered({
     Update-Progress 40 "Tải cấu hình bảng điều khiển..."
     try {
         Invoke-RestMethod -Uri $menuUrl | Out-File -FilePath "menu.py" -Encoding UTF8
-        Invoke-RestMethod -Uri $configUrl | Out-File -FilePath "config.json" -Encoding UTF8
+        
+        # BÍ QUYẾT FIX LỖI Ở ĐÂY: Tải thẳng cấu hình vào RAM (Không qua ổ cứng)
+        $cau_hinh_text = (Invoke-WebRequest -Uri $configUrl -UseBasicParsing).Content
+        
+        # Ghi đè file ra ổ cứng cho Menu Python tự đọc (Bằng .NET siêu chuẩn)
+        [System.IO.File]::WriteAllText("$workDir\config.json", $cau_hinh_text, [System.Text.Encoding]::UTF8)
         
         Update-Progress 60 "Đang đồng bộ các kịch bản cài đặt..."
-        $cau_hinh = Get-Content -Raw -Path "config.json" -Encoding UTF8 | ConvertFrom-Json
+        # Xử lý JSON trực tiếp từ RAM, né được hoàn toàn lỗi tàng hình
+        $cau_hinh = $cau_hinh_text | ConvertFrom-Json
         
-        # Đã fix chữ "trong" thành "in" ở dòng này
         foreach ($muc in $cau_hinh) {
             $link_kem_chong_cache = $muc.link_tai + "?t=$t"
             Invoke-RestMethod -Uri $link_kem_chong_cache | Out-File -FilePath $muc.ten_file -Encoding UTF8
         }
-   } catch {
-        # Bắt và in ra lỗi chi tiết từ hệ thống
+    } catch {
         $loi_chi_tiet = $_.Exception.Message
         Update-Progress 80 "LỖI: $loi_chi_tiet"
-        
-        # Tăng thời gian chờ lên 10 giây để Tuấn kịp đọc chữ
-        Start-Sleep -Seconds 10
-        $windowLoad.Close()
-        exit
+        Start-Sleep -Seconds 10; $windowLoad.Close(); exit
     }
 
     Update-Progress 100 "Đang bật bảng điều khiển..."
