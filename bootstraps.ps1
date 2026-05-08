@@ -1,4 +1,4 @@
-﻿# =================================================================
+# =================================================================
 # 1. TỰ ĐỘNG NÂNG QUYỀN ADMINISTRATOR & ẨN CỬA SỔ
 # =================================================================
 if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
