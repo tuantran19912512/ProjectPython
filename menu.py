@@ -28,9 +28,10 @@ class VietToolbox(ctk.CTk):
 
         # Nút bấm chức năng
         self.add_menu_button("1. CÀI ĐẶT WINDOWS TỐI ƯU", "#007ACC", "quickinstall.py")
-        self.add_menu_button("2. TRIỂN KHAI OFFICE TỰ ĐỘNG", "#2B579A", "officedeploy.py")
+        self.add_menu_button("1. CÀI ĐẶT WINDOWS TỐI ƯU", "#007ACC", "Cài Win V4.ps1")
+        self.add_menu_button("3. TRIỂN KHAI OFFICE TỰ ĐỘNG", "#2B579A", "officedeploy.py")
         # THÊM NÚT MỚI VÀO ĐÂY (Sử dụng màu xanh lá cho khác biệt)
-        self.add_menu_button("3. CÀI ĐẶT OFFICE TỪ GOOGLE", "#4CAF50", "officegoogle.ps1")
+        self.add_menu_button("4. CÀI ĐẶT OFFICE TỪ GOOGLE", "#4CAF50", "officegoogle.ps1")
 
         self.btn_exit = ctk.CTkButton(self, text="THOÁT", command=self.quit, fg_color="#333333", hover_color="#CF6679", width=120)
         self.btn_exit.pack(pady=20)
