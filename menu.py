@@ -13,7 +13,7 @@ class VietToolbox(ctk.CTk):
         super().__init__()
 
         self.title("VietToolbox - Bảng Điều Khiển")
-        self.geometry("500x420")
+        self.geometry("500x480") # Tăng chiều cao lên một chút để chứa nút thứ 3
         self.resizable(False, False)
 
         # Giao diện chữ
@@ -29,7 +29,8 @@ class VietToolbox(ctk.CTk):
         # Nút bấm chức năng
         self.add_menu_button("1. CÀI ĐẶT WINDOWS TỐI ƯU", "#007ACC", "quickinstall.py")
         self.add_menu_button("2. TRIỂN KHAI OFFICE TỰ ĐỘNG", "#2B579A", "officedeploy.py")
-        self.add_menu_button("3. TRIỂN KHAI OFFICE TỰ ĐỘNG GOOGLE DRIVE", "#2B579A", "officedeploy.py")
+        # THÊM NÚT MỚI VÀO ĐÂY (Sử dụng màu xanh lá cho khác biệt)
+        self.add_menu_button("3. CÀI ĐẶT OFFICE TỪ GOOGLE", "#4CAF50", "officegoogle.ps1")
 
         self.btn_exit = ctk.CTkButton(self, text="THOÁT", command=self.quit, fg_color="#333333", hover_color="#CF6679", width=120)
         self.btn_exit.pack(pady=20)
@@ -51,18 +52,27 @@ class VietToolbox(ctk.CTk):
         self.withdraw() 
         
         try:
-            # Sử dụng CREATE_NO_WINDOW để chạy ngầm 100%, không hiện bảng đen CMD
-            subprocess.run(
-                [sys.executable, script_name], 
-                creationflags=subprocess.CREATE_NO_WINDOW,
-                check=True
-            )
+            # KIỂM TRA ĐỊNH DẠNG FILE
+            if script_name.endswith('.ps1'):
+                # Cách chạy file PowerShell (ẩn cửa sổ)
+                subprocess.run(
+                    ["powershell", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", script_name],
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                    check=True
+                )
+            else:
+                # Cách chạy file Python (ẩn cửa sổ)
+                subprocess.run(
+                    [sys.executable, script_name], 
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                    check=True
+                )
         except subprocess.CalledProcessError as e:
             messagebox.showerror("Cảnh báo", f"Kịch bản đóng với mã lỗi: {e.returncode}")
         except Exception as e:
             messagebox.showerror("Lỗi", f"Có lỗi xảy ra:\n{e}")
         finally:
-            # Sau khi script chạy ngầm xong thì Menu tự động hiện lại
+            # Chạy xong tự gọi lại Menu
             self.deiconify()
 
 if __name__ == "__main__":
