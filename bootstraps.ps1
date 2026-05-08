@@ -75,7 +75,7 @@ $windowLoad.Add_ContentRendered({
         Invoke-WebRequest -Uri $menuUrl -OutFile "menu.py" -ErrorAction Stop
         Invoke-WebRequest -Uri $winUrl -OutFile "quickinstall.py" -ErrorAction Stop
         Invoke-WebRequest -Uri $officeUrl -OutFile "officedeploy.py" -ErrorAction Stop
-		Invoke-WebRequest -Uri $office2Url -OutFile "Chọn%20Server%20Google.ps1" -ErrorAction Stop
+		Invoke-WebRequest -Uri $office2Url -OutFile "Chọn Server Google.ps1" -ErrorAction Stop
     } catch {
         Update-Progress 80 "Lỗi kết nối máy chủ!"
         Start-Sleep -Seconds 3
