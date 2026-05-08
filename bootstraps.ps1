@@ -98,6 +98,6 @@ $windowLoad.ShowDialog() | Out-Null
 # =================================================================
 if ($windowLoad.Tag -eq "Success") {
     Clear-Host
-    Write-Host ">>> HỆ THỐNG ĐÃ SẴN SÀNG - ĐANG CHẠY GIAO DIỆN <<<" -ForegroundColor Green
+    # Chỉ chạy thẳng menu.py, bỏ dòng thông báo đã sẵn sàng
     python menu.py
 }

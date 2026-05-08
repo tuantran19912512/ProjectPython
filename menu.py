@@ -72,22 +72,20 @@ class VietToolbox(ctk.CTk):
         self.btn_exit.pack(pady=30)
 
     def launch_task(self, script_path):
-        if not os.path.exists(script_path):
-            messagebox.showerror("Lỗi", f"Không tìm thấy file: {script_path}")
+       if not os.path.exists(script_name):
+            messagebox.showerror("Lỗi", f"Không tìm thấy file: {script_name}")
             return
             
-        self.withdraw() # Ẩn Menu
-        print(f"\n[!] Đang khởi chạy: {script_path}")
+        self.withdraw() # Ẩn menu đi
         
-        # Chạy script con và đợi cho đến khi đóng
         try:
-            subprocess.run([sys.executable, script_path], check=True)
+            # Chạy script con trực tiếp, không in thông báo thừa
+            subprocess.run([sys.executable, script_name], check=True)
         except Exception as e:
-            print(f"Lỗi thực thi: {e}")
-        
-        print("\n[OK] Tác vụ hoàn tất.")
-        input("Nhấn Enter để quay lại Menu...")
-        self.deiconify() # Hiện lại Menu
+            messagebox.showerror("Lỗi thực thi", f"Có lỗi xảy ra: {e}")
+        finally:
+            # Chạy xong tự động gọi Menu hiện lại luôn
+            self.deiconify()
 
 if __name__ == "__main__":
     app = VietToolbox()
