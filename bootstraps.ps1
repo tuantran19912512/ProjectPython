@@ -1,6 +1,4 @@
-# =================================================================
-# 1. TỰ ĐỘNG NÂNG QUYỀN ADMINISTRATOR & ẨN CỬA SỔ
-# =================================================================
+
 if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
     Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$PSCommandPath`"" -Verb RunAs
     exit

@@ -50,10 +50,10 @@ class VietToolbox(ctk.CTk):
         self.withdraw() 
         
         try:
-            # Tham số tạo cửa sổ CMD hoàn toàn mới biệt lập
+            # Sử dụng CREATE_NO_WINDOW để chạy ngầm 100%, không hiện bảng đen CMD
             subprocess.run(
                 [sys.executable, script_name], 
-                creationflags=subprocess.CREATE_NEW_CONSOLE,
+                creationflags=subprocess.CREATE_NO_WINDOW,
                 check=True
             )
         except subprocess.CalledProcessError as e:
@@ -61,7 +61,7 @@ class VietToolbox(ctk.CTk):
         except Exception as e:
             messagebox.showerror("Lỗi", f"Có lỗi xảy ra:\n{e}")
         finally:
-            # Chạy xong cửa sổ tự tắt và gọi lại Menu
+            # Sau khi script chạy ngầm xong thì Menu tự động hiện lại
             self.deiconify()
 
 if __name__ == "__main__":
