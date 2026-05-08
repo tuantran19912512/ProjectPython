@@ -16,7 +16,7 @@ class VietToolbox(ctk.CTk):
         
         # 1. ĐỌC FILE CẤU HÌNH TỪ HỆ THỐNG
         try:
-            with open('config.json', 'r', encoding='utf-8') as f:
+            with open('config.json', 'r', encoding='utf-8-sig') as f:
                 danh_sach_cong_cu = json.load(f)
         except Exception as e:
             messagebox.showerror("Lỗi dữ liệu", f"Không đọc được file cấu hình!\n{e}")
