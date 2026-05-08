@@ -2,9 +2,9 @@ import customtkinter as ctk
 import subprocess
 import sys
 import os
+import json
 from tkinter import messagebox
 
-# Cấu hình giao diện
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
@@ -13,43 +13,50 @@ class VietToolbox(ctk.CTk):
         super().__init__()
 
         self.title("VietToolbox - Bảng Điều Khiển")
-        self.geometry("500x480") # Tăng chiều cao lên một chút để chứa nút thứ 3
+        
+        # 1. ĐỌC FILE CẤU HÌNH TỪ HỆ THỐNG
+        try:
+            with open('config.json', 'r', encoding='utf-8') as f:
+                danh_sach_cong_cu = json.load(f)
+        except Exception as e:
+            messagebox.showerror("Lỗi dữ liệu", f"Không đọc được file cấu hình!\n{e}")
+            danh_sach_cong_cu = []
+
+        # 2. TỰ ĐỘNG TÍNH TOÁN CHIỀU CAO GIAO DIỆN
+        chieu_cao_cung = 220  # Chỗ trống cho tiêu đề và nút thoát
+        chieu_cao_nut = len(danh_sach_cong_cu) * 65 # Mỗi nút chiếm 65px
+        self.geometry(f"500x{chieu_cao_cung + chieu_cao_nut}")
         self.resizable(False, False)
 
-        # Giao diện chữ
+        # Tiêu đề
         self.label_title = ctk.CTkLabel(self, text="VIETTOOLBOX", font=ctk.CTkFont(size=28, weight="bold"), text_color="#00CCFF")
         self.label_title.pack(pady=(30, 5))
-        
         self.label_ver = ctk.CTkLabel(self, text="HỆ THỐNG TỰ ĐỘNG HÓA", font=ctk.CTkFont(size=12), text_color="#555555")
-        self.label_ver.pack(pady=(0, 25))
+        self.label_ver.pack(pady=(0, 15))
 
         self.frame = ctk.CTkFrame(self, fg_color="transparent")
         self.frame.pack(fill="both", expand=True, padx=40)
 
-        # Nút bấm chức năng
-        self.add_menu_button("1. CÀI ĐẶT WINDOWS TỐI ƯU", "#007ACC", "quickinstall.py")
-        self.add_menu_button("1. CÀI ĐẶT WINDOWS TỐI ƯU", "#007ACC", "caiwinv4.ps1")
-        self.add_menu_button("3. TRIỂN KHAI OFFICE TỰ ĐỘNG", "#2B579A", "officedeploy.py")
-        # THÊM NÚT MỚI VÀO ĐÂY (Sử dụng màu xanh lá cho khác biệt)
-        self.add_menu_button("4. CÀI ĐẶT OFFICE TỪ GOOGLE", "#4CAF50", "officegoogle.ps1")
+        # 3. VÒNG LẶP TỰ ĐỘNG SINH RA CÁC NÚT BẤM
+        for cong_cu in danh_sach_cong_cu:
+            self.tao_nut(cong_cu["ten_nut"], cong_cu["mau_sac"], cong_cu["ten_file"])
 
         self.btn_exit = ctk.CTkButton(self, text="THOÁT", command=self.quit, fg_color="#333333", hover_color="#CF6679", width=120)
         self.btn_exit.pack(pady=20)
 
-    def add_menu_button(self, text, color, script):
+    def tao_nut(self, text, color, script):
         btn = ctk.CTkButton(self.frame, text=text, height=50, 
                             font=ctk.CTkFont(size=14, weight="bold"),
                             fg_color="#1E1E1E", border_color=color, border_width=1,
                             hover_color="#252525",
-                            command=lambda: self.launch_task(script))
-        btn.pack(fill="x", pady=10)
+                            command=lambda: self.thuc_thi_kich_ban(script))
+        btn.pack(fill="x", pady=8)
 
-    def launch_task(self, script_name):
+    def thuc_thi_kich_ban(self, script_name):
         if not os.path.exists(script_name):
-            messagebox.showerror("Lỗi hệ thống", f"Không tìm thấy kịch bản: {script_name}")
+            messagebox.showerror("Lỗi", f"Không tìm thấy file: {script_name}")
             return
             
-        # Ẩn giao diện Menu
         self.withdraw() 
         
         try:
@@ -57,29 +64,22 @@ class VietToolbox(ctk.CTk):
                 subprocess.run(
                     ["powershell", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", script_name],
                     creationflags=subprocess.CREATE_NO_WINDOW,
-                    capture_output=True, text=True, errors='replace', # Thêm lệnh bắt lỗi
+                    capture_output=True, text=True, errors='replace',
                     check=True
                 )
             else:
                 subprocess.run(
                     [sys.executable, script_name], 
                     creationflags=subprocess.CREATE_NO_WINDOW,
-                    capture_output=True, text=True, errors='replace', # Thêm lệnh bắt lỗi
+                    capture_output=True, text=True, errors='replace',
                     check=True
                 )
         except subprocess.CalledProcessError as e:
-            # Lấy thông báo lỗi thực tế từ kịch bản con
             loi_chi_tiet = e.stderr.strip() if e.stderr else "Lỗi không xác định."
-            
-            # Hiển thị chi tiết lỗi lên bảng thông báo
-            messagebox.showerror(
-                "Kịch bản thất bại", 
-                f"Kịch bản đóng với mã lỗi: {e.returncode}\n\n[CHI TIẾT LỖI TỪ HỆ THỐNG]:\n{loi_chi_tiet}"
-            )
+            messagebox.showerror("Lỗi kịch bản", f"Mã lỗi: {e.returncode}\n\n[CHI TIẾT LỖI]:\n{loi_chi_tiet}")
         except Exception as e:
             messagebox.showerror("Lỗi", f"Có lỗi xảy ra:\n{e}")
         finally:
-            # Chạy xong tự gọi lại Menu
             self.deiconify()
 
 if __name__ == "__main__":
