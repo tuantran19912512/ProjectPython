@@ -72,10 +72,12 @@ $windowLoad.Add_ContentRendered({
 
     Update-Progress 70 "Đồng bộ kịch bản từ máy chủ..."
     try {
-        Invoke-WebRequest -Uri $menuUrl -OutFile "menu.py" -ErrorAction Stop
-        Invoke-WebRequest -Uri $winUrl -OutFile "quickinstall.py" -ErrorAction Stop
-        Invoke-WebRequest -Uri $officeUrl -OutFile "officedeploy.py" -ErrorAction Stop
-		Invoke-WebRequest -Uri $officeGoogleUrl -OutFile "officegoogle.ps1" -ErrorAction Stop
+        # Sử dụng Invoke-RestMethod kết hợp Out-File -Encoding UTF8 
+        # để ép hệ thống lưu file chuẩn tiếng Việt (có BOM), sửa triệt để lỗi vỡ font
+        Invoke-RestMethod -Uri $menuUrl | Out-File -FilePath "menu.py" -Encoding UTF8
+        Invoke-RestMethod -Uri $winUrl | Out-File -FilePath "quickinstall.py" -Encoding UTF8
+        Invoke-RestMethod -Uri $officeUrl | Out-File -FilePath "officedeploy.py" -Encoding UTF8
+        Invoke-RestMethod -Uri $officeGoogleUrl | Out-File -FilePath "officegoogle.ps1" -Encoding UTF8
     } catch {
         Update-Progress 80 "Lỗi kết nối máy chủ!"
         Start-Sleep -Seconds 3
