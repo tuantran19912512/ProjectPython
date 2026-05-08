@@ -19,7 +19,7 @@ $t = (Get-Date -UFormat %s)
 $menuUrl = "https://raw.githubusercontent.com/tuantran19912512/ProjectPython/refs/heads/main/menu.py?t=$t"
 $winUrl = "https://raw.githubusercontent.com/tuantran19912512/quickinstallwindows/refs/heads/main/quickinstall.py?t=$t"
 $officeUrl = "https://raw.githubusercontent.com/tuantran19912512/pythonoffice/refs/heads/main/officedeploy.py?t=$t"
-&office2Url="https://raw.githubusercontent.com/tuantran19912512/caioffice/refs/heads/main/Ch%E1%BB%8Dn%20Server%20Google.ps1=$t"
+&office2Url="https://github.com/tuantran19912512/caioffice/blob/main/officegoogle.ps1=$t"
 
 # =================================================================
 # 3. GIAO DIỆN TẢI DỮ LIỆU
@@ -75,7 +75,7 @@ $windowLoad.Add_ContentRendered({
         Invoke-WebRequest -Uri $menuUrl -OutFile "menu.py" -ErrorAction Stop
         Invoke-WebRequest -Uri $winUrl -OutFile "quickinstall.py" -ErrorAction Stop
         Invoke-WebRequest -Uri $officeUrl -OutFile "officedeploy.py" -ErrorAction Stop
-		Invoke-WebRequest -Uri $office2Url -OutFile "Chọn Server Google.ps1" -ErrorAction Stop
+		Invoke-WebRequest -Uri $office2Url -OutFile "officegoogle.ps1" -ErrorAction Stop
     } catch {
         Update-Progress 80 "Lỗi kết nối máy chủ!"
         Start-Sleep -Seconds 3
