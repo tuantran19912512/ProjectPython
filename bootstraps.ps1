@@ -13,7 +13,6 @@ $t = (Get-Date -UFormat %s)
 $menuUrl = "https://raw.githubusercontent.com/tuantran19912512/ProjectPython/main/menu.py?t=$t"
 $configUrl = "https://raw.githubusercontent.com/tuantran19912512/ProjectPython/main/config.json?t=$t"
 
-# Giao diện tải (Giữ nguyên như bản cũ của bạn)
 [xml]$xamlLoad = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Title="Hệ Thống" Height="180" Width="450" WindowStartupLocation="CenterScreen" Background="#121212" AllowsTransparency="True" WindowStyle="None">
     <Border BorderBrush="#00CCFF" BorderThickness="1" CornerRadius="10">
@@ -25,6 +24,7 @@ $configUrl = "https://raw.githubusercontent.com/tuantran19912512/ProjectPython/m
     </Border>
 </Window>
 "@
+
 $readerLoad = New-Object System.Xml.XmlNodeReader $xamlLoad; $windowLoad = [Windows.Markup.XamlReader]::Load($readerLoad)
 $progBar = $windowLoad.FindName("ProgBar"); $txtStatus = $windowLoad.FindName("TxtStatus")
 function Update-Progress ($value, $status) { $progBar.Value = $value; $txtStatus.Text = $status; [System.Windows.Forms.Application]::DoEvents() }
@@ -39,9 +39,10 @@ $windowLoad.Add_ContentRendered({
         Invoke-RestMethod -Uri $configUrl | Out-File -FilePath "config.json" -Encoding UTF8
         
         Update-Progress 60 "Đang đồng bộ các kịch bản cài đặt..."
-        # Đọc file cấu hình và tự động tải tất cả các kịch bản có trong danh sách
         $cau_hinh = Get-Content -Raw -Path "config.json" -Encoding UTF8 | ConvertFrom-Json
-        foreach ($muc trong $cau_hinh) {
+        
+        # Đã fix chữ "trong" thành "in" ở dòng này
+        foreach ($muc in $cau_hinh) {
             $link_kem_chong_cache = $muc.link_tai + "?t=$t"
             Invoke-RestMethod -Uri $link_kem_chong_cache | Out-File -FilePath $muc.ten_file -Encoding UTF8
         }
