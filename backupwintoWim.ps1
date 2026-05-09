@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     CÔNG CỤ TỰ ĐỘNG SYSPREP & BACKUP WINDOWS (CAPTURE TO WIM) - V1.6
     Chỉnh sửa: Kỹ sư Hệ thống | Ngôn ngữ: Tiếng Việt 100%
