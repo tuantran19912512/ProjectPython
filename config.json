@@ -1,24 +1,31 @@
 [
+    
     {
         "ten_nut": "1. CÀI ĐẶT WINDOWS CUSTOM",
+        "mau_sac": "#007ACC",
+        "ten_file": "backupwintoWim.ps1",
+        "link_tai": "https://raw.githubusercontent.com/tuantran19912512/Windows-tool-box/refs/heads/main/Scripts/1.Windows/Ph%E1%BA%A7n%20c%C3%A0i%20win%20Online/backupwintoWim.ps1"
+    },
+	{
+        "ten_nut": "2. CÀI ĐẶT WINDOWS CUSTOM",
         "mau_sac": "#007ACC",
         "ten_file": "quickinstall.py",
         "link_tai": "https://raw.githubusercontent.com/tuantran19912512/quickinstallwindows/refs/heads/main/quickinstall.py"
     },
 	{
-        "ten_nut": "2. CÀI ĐẶT WINDOWS TRẮNG",
+        "ten_nut": "3. CÀI ĐẶT WINDOWS TRẮNG",
         "mau_sac": "#FFC107",
         "ten_file": "caiwinv4.ps1",
         "link_tai": "https://raw.githubusercontent.com/tuantran19912512/caiwin/refs/heads/main/caiwinv4.ps1"
     },
     {
-        "ten_nut": "3. TRIỂN KHAI OFFICE TỰ ĐỘNG",
+        "ten_nut": "4. TRIỂN KHAI OFFICE TỰ ĐỘNG",
         "mau_sac": "#2B579A",
         "ten_file": "officedeploy.py",
         "link_tai": "https://raw.githubusercontent.com/tuantran19912512/pythonoffice/refs/heads/main/officedeploy.py"
     },
     {
-        "ten_nut": "4. CÀI ĐẶT OFFICE TỪ GOOGLE",
+        "ten_nut": "5. CÀI ĐẶT OFFICE TỪ GOOGLE",
         "mau_sac": "#4CAF50",
         "ten_file": "officegoogle.ps1",
         "link_tai": "https://raw.githubusercontent.com/tuantran19912512/caioffice/refs/heads/main/officegoogle.ps1"
