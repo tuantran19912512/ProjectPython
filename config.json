@@ -2,9 +2,9 @@
     
     {
         "ten_nut": "1. ĐÓNG GÓI WINDOWS",
-        "mau_sac": "#007ACC",
-        "ten_file": "backupwintoWim.ps1",
-        "link_tai": "https://raw.githubusercontent.com/tuantran19912512/ProjectPython/refs/heads/main/backupwintoWim.ps1"
+        "mau_sac": "#FF0000",
+        "ten_file": "backupWintoWim.py",
+        "link_tai": "https://raw.githubusercontent.com/tuantran19912512/ProjectPython/refs/heads/main/backupWintoWim.py"
     },
 	{
         "ten_nut": "2. CÀI ĐẶT WINDOWS CUSTOM",
