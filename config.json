@@ -29,6 +29,12 @@
         "mau_sac": "#4CAF50",
         "ten_file": "officegoogle.ps1",
         "link_tai": "https://raw.githubusercontent.com/tuantran19912512/caioffice/refs/heads/main/officegoogle.ps1"
+    },
+	{
+        "ten_nut": "6. Sửa chữa Windows",
+        "mau_sac": "#4CAF50",
+        "ten_file": "repairwindows.py",
+        "link_tai": "https://raw.githubusercontent.com/tuantran19912512/ProjectPython/refs/heads/main/repairwindows.py"
     }
     
 ]
