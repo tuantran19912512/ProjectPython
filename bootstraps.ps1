@@ -30,10 +30,31 @@ $progBar = $windowLoad.FindName("ProgBar"); $txtStatus = $windowLoad.FindName("T
 function Update-Progress ($value, $status) { $progBar.Value = $value; $txtStatus.Text = $status; [System.Windows.Forms.Application]::DoEvents() }
 
 $windowLoad.Add_ContentRendered({
-    Update-Progress 20 "Cài đặt thư viện giao diện..."
+    
+    # 1. KIỂM TRA VÀ TỰ ĐỘNG CÀI ĐẶT PYTHON NẾU CHƯA CÓ
+    Update-Progress 10 "Kiểm tra môi trường Python..."
+    if (!(Get-Command python -ErrorAction SilentlyContinue)) {
+        Update-Progress 15 "Đang tải Python (vui lòng đợi)..."
+        $pythonInstaller = "$workDir\python_installer.exe"
+        
+        # Tải Python 3.12 (có thể đổi phiên bản tùy ý)
+        Invoke-WebRequest -Uri "https://www.python.org/ftp/python/3.12.3/python-3.12.3-amd64.exe" -OutFile $pythonInstaller -UseBasicParsing
+        
+        Update-Progress 25 "Đang cài đặt Python ngầm vào hệ thống..."
+        # Cài đặt Silent, cấu hình tự thêm vào PATH cho mọi User
+        Start-Process -FilePath $pythonInstaller -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1 Include_test=0" -Wait -NoNewWindow
+        
+        # Lấy lại biến môi trường PATH mới nhất từ Registry để phiên PowerShell hiện tại nhận diện được lệnh "python"
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+    }
+
+    # 2. CÀI ĐẶT THƯ VIỆN GIAO DIỆN VÀ PIP
+    Update-Progress 40 "Cài đặt thư viện Python (pip)..."
+    python -m pip install --upgrade pip --quiet --disable-pip-version-check
     python -m pip install customtkinter Pillow requests --quiet --disable-pip-version-check
 
-    Update-Progress 40 "Tải cấu hình bảng điều khiển..."
+    # 3. TẢI CẤU HÌNH BẢNG ĐIỀU KHIỂN
+    Update-Progress 60 "Tải cấu hình bảng điều khiển..."
     try {
         Invoke-RestMethod -Uri $menuUrl | Out-File -FilePath "menu.py" -Encoding UTF8
         
@@ -43,7 +64,7 @@ $windowLoad.Add_ContentRendered({
         # Ghi đè file ra ổ cứng cho Menu Python tự đọc (Bằng .NET siêu chuẩn)
         [System.IO.File]::WriteAllText("$workDir\config.json", $cau_hinh_text, [System.Text.Encoding]::UTF8)
         
-        Update-Progress 60 "Đang đồng bộ các kịch bản cài đặt..."
+        Update-Progress 80 "Đang đồng bộ các kịch bản cài đặt..."
         # Xử lý JSON trực tiếp từ RAM, né được hoàn toàn lỗi tàng hình
         $cau_hinh = $cau_hinh_text | ConvertFrom-Json
         
@@ -53,7 +74,7 @@ $windowLoad.Add_ContentRendered({
         }
     } catch {
         $loi_chi_tiet = $_.Exception.Message
-        Update-Progress 80 "LỖI: $loi_chi_tiet"
+        Update-Progress 90 "LỖI: $loi_chi_tiet"
         Start-Sleep -Seconds 10; $windowLoad.Close(); exit
     }
 
