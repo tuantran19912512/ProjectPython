@@ -30,11 +30,18 @@
         "ten_file": "officegoogle.ps1",
         "link_tai": "https://raw.githubusercontent.com/tuantran19912512/caioffice/refs/heads/main/officegoogle.ps1"
     },
-	 {
+	{
         "ten_nut": "5. SỬA LỖI WINDOWS",
         "mau_sac": "#4CAF50",
         "ten_file": "repairwindows.py",
         "link_tai": "https://raw.githubusercontent.com/tuantran19912512/ProjectPython/refs/heads/main/repairwindows.py"
+    },
+	{
+        "ten_nut": "6. CÀI PHẦN MỀM CƠ BẢN",
+        "mau_sac": "#4CAF50",
+        "ten_file": "taiphanmem.py",
+        "link_tai": "https://raw.githubusercontent.com/tuantran19912512/ProjectPython/refs/heads/main/taiphanmem.py"
+		"thu_vien": "PyQt6 requests psutil"
     }
     
 ]

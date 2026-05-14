@@ -88,9 +88,19 @@ $windowLoad.Add_ContentRendered({
         $cau_hinh = $cau_hinh_text | ConvertFrom-Json
         
         foreach ($muc in $cau_hinh) {
-            $link_kem_chong_cache = $muc.link_tai + "?t=$t"
-            Invoke-RestMethod -Uri $link_kem_chong_cache | Out-File -FilePath $muc.ten_file -Encoding UTF8
-        }
+		# 1. Tải file script về như cũ
+		$link_kem_chong_cache = $muc.link_tai + "?t=$t"
+		Invoke-RestMethod -Uri $link_kem_chong_cache | Out-File -FilePath $muc.ten_file -Encoding UTF8
+		
+		# 2. KIỂM TRA VÀ CÀI THƯ VIỆN (Nếu có trường thu_vien trong JSON)
+		if ($muc.thu_vien) {
+			Update-Progress 85 "Đang cài thư viện cho $($muc.ten_nut)..."
+			$danh_sach_lib = $muc.thu_vien # Lấy chuỗi "PyQt6 requests psutil"
+			
+			# Chạy lệnh pip cài đặt các thư viện này
+			& $pythonThat -m pip install $danh_sach_lib --quiet --disable-pip-version-check
+		}
+}
     } catch {
         $loi_chi_tiet = $_.Exception.Message
         Update-Progress 90 "LỖI: $loi_chi_tiet"
