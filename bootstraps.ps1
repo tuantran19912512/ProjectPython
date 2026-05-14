@@ -92,13 +92,14 @@ $windowLoad.Add_ContentRendered({
 		$link_kem_chong_cache = $muc.link_tai + "?t=$t"
 		Invoke-RestMethod -Uri $link_kem_chong_cache | Out-File -FilePath $muc.ten_file -Encoding UTF8
 		
-		# 2. KIỂM TRA VÀ CÀI THƯ VIỆN (Nếu có trường thu_vien trong JSON)
 		if ($muc.thu_vien) {
-			Update-Progress 85 "Đang cài thư viện cho $($muc.ten_nut)..."
-			$danh_sach_lib = $muc.thu_vien # Lấy chuỗi "PyQt6 requests psutil"
-			
-			# Chạy lệnh pip cài đặt các thư viện này
-			& $pythonThat -m pip install $danh_sach_lib --quiet --disable-pip-version-check
+		Update-Progress 85 "Đang cài thư viện cho $($muc.ten_nut)..."
+		
+		# Cách 1: Tách chuỗi thành mảng dựa trên khoảng trắng
+		$danh_sach_mang = $muc.thu_vien -split " "
+		
+		# Chạy lệnh pip với mảng thư viện
+		& $pythonThat -m pip install $danh_sach_mang --quiet --disable-pip-version-check
 		}
 }
     } catch {
