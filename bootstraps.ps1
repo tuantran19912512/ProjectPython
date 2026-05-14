@@ -49,12 +49,12 @@ $windowLoad.Add_ContentRendered({
     }
 
     if ($canCaiDat) {
-        Update-Progress 15 "Đang tải Python (vui lòng đợi)..."
+        Update-Progress 15 "Đang tải thư viện(vui lòng đợi)..."
         $fileCaiDat = "$workDir\python_installer.exe"
         
         Invoke-WebRequest -Uri "https://www.python.org/ftp/python/3.12.3/python-3.12.3-amd64.exe" -OutFile $fileCaiDat -UseBasicParsing
         
-        Update-Progress 25 "Đang cài đặt Python ngầm vào hệ thống..."
+        Update-Progress 25 "Đang cài đặt thư viện vào hệ thống..."
         Start-Process -FilePath $fileCaiDat -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1 Include_test=0" -Wait -NoNewWindow
         
         # Làm mới lại biến môi trường, ép hệ thống ưu tiên đường dẫn thật của Python (Machine Path)
@@ -72,7 +72,7 @@ $windowLoad.Add_ContentRendered({
     }
 
     # 2. CÀI ĐẶT THƯ VIỆN GIAO DIỆN VÀ PIP (Dùng đúng file thật vừa tìm được)
-    Update-Progress 40 "Cài đặt thư viện Python (pip)..."
+    Update-Progress 40 "Cài đặt thư viện hỗ trợ (pip)..."
     & $pythonThat -m pip install --upgrade pip --quiet --disable-pip-version-check
     & $pythonThat -m pip install customtkinter Pillow requests --quiet --disable-pip-version-check
 
