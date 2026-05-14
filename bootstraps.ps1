@@ -31,41 +31,60 @@ function Update-Progress ($value, $status) { $progBar.Value = $value; $txtStatus
 
 $windowLoad.Add_ContentRendered({
     
-    # 1. KIỂM TRA VÀ TỰ ĐỘNG CÀI ĐẶT PYTHON NẾU CHƯA CÓ
+    # 1. KIỂM TRA VÀ BỎ QUA FILE ẢO CỦA WINDOWS STORE
     Update-Progress 10 "Kiểm tra môi trường Python..."
-    if (!(Get-Command python -ErrorAction SilentlyContinue)) {
+    
+    $canCaiDat = $true
+    $lenhPy = Get-Command python.exe -ErrorAction SilentlyContinue
+    
+    if ($lenhPy) {
+        # Đo kích thước file. Nếu là file ảo của Windows, dung lượng sẽ là 0 byte.
+        $duongDanPy = $lenhPy.Source
+        if (Test-Path $duongDanPy) {
+            $thongTinFile = Get-Item -LiteralPath $duongDanPy
+            if ($thongTinFile.Length -gt 0) {
+                $canCaiDat = $false
+            }
+        }
+    }
+
+    if ($canCaiDat) {
         Update-Progress 15 "Đang tải Python (vui lòng đợi)..."
-        $pythonInstaller = "$workDir\python_installer.exe"
+        $fileCaiDat = "$workDir\python_installer.exe"
         
-        # Tải Python 3.12 (có thể đổi phiên bản tùy ý)
-        Invoke-WebRequest -Uri "https://www.python.org/ftp/python/3.12.3/python-3.12.3-amd64.exe" -OutFile $pythonInstaller -UseBasicParsing
+        Invoke-WebRequest -Uri "https://www.python.org/ftp/python/3.12.3/python-3.12.3-amd64.exe" -OutFile $fileCaiDat -UseBasicParsing
         
         Update-Progress 25 "Đang cài đặt Python ngầm vào hệ thống..."
-        # Cài đặt Silent, cấu hình tự thêm vào PATH cho mọi User
-        Start-Process -FilePath $pythonInstaller -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1 Include_test=0" -Wait -NoNewWindow
+        Start-Process -FilePath $fileCaiDat -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1 Include_test=0" -Wait -NoNewWindow
         
-        # Lấy lại biến môi trường PATH mới nhất từ Registry để phiên PowerShell hiện tại nhận diện được lệnh "python"
+        # Làm mới lại biến môi trường, ép hệ thống ưu tiên đường dẫn thật của Python (Machine Path)
         $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
     }
 
-    # 2. CÀI ĐẶT THƯ VIỆN GIAO DIỆN VÀ PIP
+    # ĐỂ CHẮC CÚ 100%: Quét lại toàn bộ và lấy đích danh file exe thật (bỏ qua file ảo)
+    $pythonThat = "python.exe"
+    $tatCaPython = Get-Command python.exe -All -ErrorAction SilentlyContinue
+    foreach ($p in $tatCaPython) {
+        if ((Get-Item -LiteralPath $p.Source).Length -gt 0) {
+            $pythonThat = $p.Source
+            break
+        }
+    }
+
+    # 2. CÀI ĐẶT THƯ VIỆN GIAO DIỆN VÀ PIP (Dùng đúng file thật vừa tìm được)
     Update-Progress 40 "Cài đặt thư viện Python (pip)..."
-    python -m pip install --upgrade pip --quiet --disable-pip-version-check
-    python -m pip install customtkinter Pillow requests --quiet --disable-pip-version-check
+    & $pythonThat -m pip install --upgrade pip --quiet --disable-pip-version-check
+    & $pythonThat -m pip install customtkinter Pillow requests --quiet --disable-pip-version-check
 
     # 3. TẢI CẤU HÌNH BẢNG ĐIỀU KHIỂN
     Update-Progress 60 "Tải cấu hình bảng điều khiển..."
     try {
         Invoke-RestMethod -Uri $menuUrl | Out-File -FilePath "menu.py" -Encoding UTF8
         
-        # BÍ QUYẾT FIX LỖI Ở ĐÂY: Tải thẳng cấu hình vào RAM (Không qua ổ cứng)
         $cau_hinh_text = (Invoke-WebRequest -Uri $configUrl -UseBasicParsing).Content
-        
-        # Ghi đè file ra ổ cứng cho Menu Python tự đọc (Bằng .NET siêu chuẩn)
         [System.IO.File]::WriteAllText("$workDir\config.json", $cau_hinh_text, [System.Text.Encoding]::UTF8)
         
         Update-Progress 80 "Đang đồng bộ các kịch bản cài đặt..."
-        # Xử lý JSON trực tiếp từ RAM, né được hoàn toàn lỗi tàng hình
         $cau_hinh = $cau_hinh_text | ConvertFrom-Json
         
         foreach ($muc in $cau_hinh) {
@@ -79,10 +98,14 @@ $windowLoad.Add_ContentRendered({
     }
 
     Update-Progress 100 "Đang bật bảng điều khiển..."
-    Start-Sleep -Milliseconds 500; $windowLoad.Tag = "Success"; $windowLoad.Close()
+    Start-Sleep -Milliseconds 500; 
+    $windowLoad.Tag = $pythonThat; # Ném đường dẫn Python thật ra ngoài
+    $windowLoad.Close()
 })
 $windowLoad.ShowDialog() | Out-Null
 
-if ($windowLoad.Tag -eq "Success") {
-    Start-Process python -ArgumentList "menu.py" -WindowStyle Hidden
+# Chạy menu.py bằng đúng đường dẫn Python thật đã lấy từ bên trong GUI
+if ($windowLoad.Tag) {
+    $khoiChayPython = $windowLoad.Tag
+    Start-Process $khoiChayPython -ArgumentList "menu.py" -WindowStyle Hidden
 }
