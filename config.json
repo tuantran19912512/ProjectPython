@@ -40,14 +40,14 @@
 		"ten_nut": "6. CÀI PHẦN MỀM CƠ BẢN",
 		"mau_sac": "#4CAF50",
 		"ten_file": "taiphanmem.py",
-		"link_tai": "https://raw.githubusercontent.com/tuantran19912512/ProjectPython/refs/heads/main/taiphanmem.py",
+		"link_tai": "https://raw.githubusercontent.com/tuantran19912512/ProjectPython/refs/heads/main/taiphanmem.py"
 		"thu_vien": "PyQt6 requests psutil"
 	},
 	{
 		"ten_nut": "7. SỬA LỖI SHARE LAN & PRINTER",
 		"mau_sac": "#4CAF50",
 		"ten_file": "sualoiLanShare.py",
-		"link_tai": "https://raw.githubusercontent.com/tuantran19912512/Lanprint/refs/heads/main/sualoiLanShare.py",
+		"link_tai": "https://raw.githubusercontent.com/tuantran19912512/Lanprint/refs/heads/main/sualoiLanShare.py"
 	}
     
 ]
