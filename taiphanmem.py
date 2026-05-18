@@ -16,7 +16,7 @@ import psutil
 
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QLabel, QPushButton, QScrollArea, 
-                             QCheckBox, QProgressBar, QFrame)
+                             QCheckBox, QProgressBar, QFrame, QPlainTextEdit)
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer
 from PyQt6.QtGui import QFont, QPixmap
 
@@ -136,25 +136,123 @@ class LuongTaiIcon(QThread):
 class LuongCaiDat(QThread):
     cap_nhat_giao_dien = pyqtSignal(PhanMem, str, int)
     hoan_thanh_toan_bo = pyqtSignal()
+    ghi_log = pyqtSignal(str) 
 
     def __init__(self, danh_sach_cai_dat):
         super().__init__()
         self.danh_sach = danh_sach_cai_dat
         self.dung_lai = False
 
+    def xu_ly_log(self, thong_diep):
+        thoi_gian = time.strftime('%H:%M:%S')
+        self.ghi_log.emit(f"[{thoi_gian}] {thong_diep}")
+
+    def nhan_dang_installer_thong_minh(self, duong_dan_exe):
+        try:
+            with open(duong_dan_exe, 'rb') as f:
+                data_dau = f.read(2 * 1024 * 1024).decode('latin1', errors='ignore')
+
+                if 'Inno Setup' in data_dau or 'InnoSetup' in data_dau:
+                    self.xu_ly_log("  -> Nhận diện chữ ký: Inno Setup")
+                    return ["/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-"]
+                if 'Nullsoft' in data_dau or 'NSIS' in data_dau:
+                    self.xu_ly_log("  -> Nhận diện chữ ký: NSIS (Nullsoft)")
+                    return ["/S"]
+                if 'InstallShield' in data_dau:
+                    self.xu_ly_log("  -> Nhận diện chữ ký: InstallShield")
+                    return ["/s", '/v"/qn"']
+                if 'WiX Toolset' in data_dau or 'wix' in data_dau.lower():
+                    self.xu_ly_log("  -> Nhận diện chữ ký: WiX Toolset")
+                    return ["/quiet", "/norestart"]
+                if 'Advanced Installer' in data_dau:
+                    self.xu_ly_log("  -> Nhận diện chữ ký: Advanced Installer")
+                    return ["/exenoui", "/qn"]
+
+                f.seek(0, 2)
+                kich_thuoc = f.tell()
+                if kich_thuoc > 2 * 1024 * 1024:
+                    f.seek(kich_thuoc - 2 * 1024 * 1024)
+                    data_cuoi = f.read().decode('latin1', errors='ignore')
+                    
+                    if 'Inno Setup' in data_cuoi or 'InnoSetup' in data_cuoi:
+                        self.xu_ly_log("  -> Nhận diện chữ ký (cuối file): Inno Setup")
+                        return ["/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-"]
+                    if 'Nullsoft' in data_cuoi or 'NSIS' in data_cuoi:
+                        self.xu_ly_log("  -> Nhận diện chữ ký (cuối file): NSIS")
+                        return ["/S"]
+                    if 'InstallShield' in data_cuoi:
+                        self.xu_ly_log("  -> Nhận diện chữ ký (cuối file): InstallShield")
+                        return ["/s", '/v"/qn"']
+        except Exception as e:
+            self.xu_ly_log(f"  -> Lỗi phân tích nhị phân: {str(e)}")
+
+        self.xu_ly_log("  -> Không nhận diện được chữ ký, dùng mặc định: /S")
+        return ["/S"]
+
+    def phat_hien_cua_so_cai_dat(self, pid_goc):
+        try:
+            tien_trinh = psutil.Process(pid_goc)
+            danh_sach_pid = [p.pid for p in tien_trinh.children(recursive=True)]
+            danh_sach_pid.append(pid_goc)
+            
+            EnumWindows = ctypes.windll.user32.EnumWindows
+            EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
+            GetWindowThreadProcessId = ctypes.windll.user32.GetWindowThreadProcessId
+            IsWindowVisible = ctypes.windll.user32.IsWindowVisible
+            GetWindowText = ctypes.windll.user32.GetWindowTextW
+            GetWindowTextLength = ctypes.windll.user32.GetWindowTextLengthW
+            
+            danh_sach_cua_so = []
+
+            def lap_qua_cua_so(hwnd, lParam):
+                if IsWindowVisible(hwnd):
+                    do_dai = GetWindowTextLength(hwnd)
+                    if do_dai > 0:
+                        pid_hien_tai = ctypes.c_ulong()
+                        GetWindowThreadProcessId(hwnd, ctypes.byref(pid_hien_tai))
+                        if pid_hien_tai.value in danh_sach_pid:
+                            buff = ctypes.create_unicode_buffer(do_dai + 1)
+                            GetWindowText(hwnd, buff, do_dai + 1)
+                            ten = buff.value
+                            if ten not in ["Default IME", "MSCTFIME UI"]:
+                                danh_sach_cua_so.append(ten)
+                return True
+                
+            EnumWindows(EnumWindowsProc(lap_qua_cua_so), 0)
+            return danh_sach_cua_so
+        except Exception:
+            return []
+
+    def huy_tien_trinh_va_con(self, pid_goc):
+        try:
+            tien_trinh_me = psutil.Process(pid_goc)
+            for con in tien_trinh_me.children(recursive=True):
+                try: con.kill() 
+                except: pass
+            tien_trinh_me.kill()
+        except:
+            pass
+
     def run(self):
+        self.xu_ly_log("=== BẮT ĐẦU TIẾN TRÌNH XỬ LÝ ===")
         for pm in self.danh_sach:
             if self.dung_lai: break
             self.xu_ly_mot_phan_mem(pm)
+        if self.dung_lai:
+            self.xu_ly_log("=== TIẾN TRÌNH BỊ HỦY BỞI NGƯỜI DÙNG ===")
+        else:
+            self.xu_ly_log("=== HOÀN TẤT TOÀN BỘ TIẾN TRÌNH ===")
         self.hoan_thanh_toan_bo.emit()
 
     def dung_tien_trinh(self): self.dung_lai = True
 
     def xu_ly_mot_phan_mem(self, pm: PhanMem):
+        self.xu_ly_log(f"Đang xử lý: {pm.ten}")
         self.cap_nhat_giao_dien.emit(pm, "Đang khởi tạo...", 5)
         duong_dan_luu = self.tai_file_thong_minh(pm)
         
         if not duong_dan_luu:
+            self.xu_ly_log(f"❌ Thất bại tải về: {pm.ten}")
             return
             
         if self.dung_lai: return
@@ -166,6 +264,7 @@ class LuongCaiDat(QThread):
         thu_muc_giai_nen = THU_MUC_TEMP / f"Extracted_{''.join(c for c in pm.ten if c.isalnum())}"
         
         if is_archive:
+            self.xu_ly_log(f"  -> Giải nén file: {Path(duong_dan_str).name}")
             self.cap_nhat_giao_dien.emit(pm, "Đang bung file nén...", 30)
             thu_muc_giai_nen.mkdir(parents=True, exist_ok=True)
             exe_7z = THU_MUC_TEMP / "7za.exe"
@@ -182,11 +281,13 @@ class LuongCaiDat(QThread):
             if ds_exe:
                 ds_exe.sort(key=lambda f: f.stat().st_size, reverse=True)
                 file_thuc_thi = str(ds_exe[0])
+                self.xu_ly_log(f"  -> Đã tìm thấy exe trong file nén: {Path(file_thuc_thi).name}")
 
         ten_exe_chinh = Path(file_thuc_thi).stem.lower()
         la_app_portable = not re.search(r"(?i)setup|install|msiexec", ten_exe_chinh) and (re.search(r"(?i)unikey|evkey|rufus|anydesk", pm.ten) or is_archive)
 
         if la_app_portable:
+            self.xu_ly_log("  -> Nhận diện là ứng dụng Portable, đang tạo thư mục và Shortcut...")
             self.cap_nhat_giao_dien.emit(pm, "Cài Portable & Tạo lối tắt...", 70)
             thu_muc_dich = Path(os.environ.get('ProgramW6432', 'C:\\Program Files')) / ''.join(c for c in pm.ten if c.isalnum() or c in ' -_')
             try:
@@ -219,42 +320,111 @@ class LuongCaiDat(QThread):
                     subprocess.run(["wscript.exe", str(vbs_path)], creationflags=subprocess.CREATE_NO_WINDOW)
                     subprocess.Popen([target_exe], creationflags=subprocess.CREATE_NO_WINDOW)
                     
+                    self.xu_ly_log(f"✔️ Hoàn tất Portable: {pm.ten}")
                     self.cap_nhat_giao_dien.emit(pm, "Hoàn tất!", 100)
                     return
-            except Exception: pass
-
-        tham_so_cai = pm.tham_so if pm.tham_so else "/S"
-        lenh_thuc_thi = []
+            except Exception as e: 
+                self.xu_ly_log(f"❌ Lỗi xử lý Portable: {str(e)}")
 
         if file_thuc_thi.lower().endswith('.msi'):
-            lenh_thuc_thi = ["msiexec.exe", "/i", file_thuc_thi, "/quiet", "/norestart", "ALLUSERS=1"]
+            tham_so_cai = ["/quiet", "/norestart", "ALLUSERS=1"]
+            file_thuc_thi = "msiexec.exe"
+            lenh_thuc_thi_goc = [file_thuc_thi, "/i", duong_dan_str] + tham_so_cai
+            danh_sach_tham_so_thu = [lenh_thuc_thi_goc]
         elif file_thuc_thi.lower().endswith(('.msix', '.appx', '.msixbundle')):
-            lenh_thuc_thi = ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", f"Add-AppxPackage -Path '{file_thuc_thi}'"]
+            lenh_thuc_thi_goc = ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", f"Add-AppxPackage -Path '{file_thuc_thi}'"]
+            danh_sach_tham_so_thu = [lenh_thuc_thi_goc]
         else:
-            lenh_thuc_thi = [file_thuc_thi] + tham_so_cai.split()
+            if pm.tham_so and pm.tham_so.strip():
+                tham_so_cai = pm.tham_so.split()
+                if len(tham_so_cai) == 1 and tham_so_cai[0].lower() in ['/s', '-s']:
+                    tham_so_chuan = self.nhan_dang_installer_thong_minh(file_thuc_thi)
+                    if tham_so_chuan == ["/S"] and tham_so_cai[0] != "/S":
+                        tham_so_cai = ["/S"]
+                        self.xu_ly_log("  -> [Auto-Fix] Tự động sửa lỗi gõ nhầm thành /S (Chuẩn NSIS)")
+                    elif tham_so_chuan == ["/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-"]:
+                        tham_so_cai = tham_so_chuan
+                        self.xu_ly_log("  -> [Auto-Fix] Cập nhật tham số sai thành chuẩn Inno Setup")
+                else:
+                    self.xu_ly_log(f"  -> Dùng tham số tĩnh từ CSV: {' '.join(tham_so_cai)}")
+            else:
+                self.xu_ly_log("  -> Đang quét nhị phân để lấy tham số Silent...")
+                self.cap_nhat_giao_dien.emit(pm, "Đang phân tích bộ cài...", 45)
+                tham_so_cai = self.nhan_dang_installer_thong_minh(file_thuc_thi)
 
-        self.cap_nhat_giao_dien.emit(pm, "Đang cài đặt...", 50)
-        
+            lenh_thuc_thi_goc = [file_thuc_thi] + tham_so_cai
+            danh_sach_tham_so_thu = [lenh_thuc_thi_goc]
+
+            # Thêm các tham số phổ thông làm phương án dự phòng cho file EXE
+            cac_tham_so_du_phong = [
+                ["/S"], 
+                ["/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-"], 
+                ["/quiet", "/norestart"], 
+                ["/s", '/v"/qn"'], 
+                ["-q"]
+            ]
+            for ts_dp in cac_tham_so_du_phong:
+                lenh_moi = [file_thuc_thi] + ts_dp
+                if lenh_moi not in danh_sach_tham_so_thu:
+                    danh_sach_tham_so_thu.append(lenh_moi)
+
+        cai_dat_thanh_cong = False
         explorer_cu = lay_danh_sach_explorer()
 
-        try:
-            process = subprocess.Popen(lenh_thuc_thi, stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=subprocess.CREATE_NO_WINDOW)
-            for i in range(50, 95):
-                if process.poll() is not None or self.dung_lai: break
-                self.cap_nhat_giao_dien.emit(pm, "Đang tiến hành...", i)
+        # VÒNG LẶP THỬ NGHIỆM TỪNG THAM SỐ (BRUTE-FORCE SILENT)
+        for lan_thu, lenh_thuc_thi in enumerate(danh_sach_tham_so_thu, 1):
+            if self.dung_lai: break
+            
+            self.xu_ly_log(f"  -> [Lần thử {lan_thu}] Đang nạp lệnh: {' '.join(lenh_thuc_thi)}")
+            self.cap_nhat_giao_dien.emit(pm, f"Đang cài (Thử {lan_thu})...", 50)
+            
+            try:
+                process = subprocess.Popen(lenh_thuc_thi, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=subprocess.CREATE_NO_WINDOW)
                 
-                for hwnd in lay_danh_sach_explorer():
-                    if hwnd not in explorer_cu: dong_cua_so(hwnd)
-                time.sleep(1)
-            
-            process.wait()
-            self.don_rac_he_thong()
-            
-            for hwnd in lay_danh_sach_explorer():
-                if hwnd not in explorer_cu: dong_cua_so(hwnd)
+                thoi_gian_cho_toi_da = 600
+                bi_bung_giao_dien = False
+                
+                for i in range(thoi_gian_cho_toi_da):
+                    if process.poll() is not None or self.dung_lai: 
+                        break
                     
+                    tien_trinh_ao = 50 + int((i / thoi_gian_cho_toi_da) * 45)
+                    self.cap_nhat_giao_dien.emit(pm, f"Đang tiến hành (Lần {lan_thu})...", tien_trinh_ao)
+                    
+                    # Radar quét cửa sổ mỗi 3 giây
+                    if i > 0 and i % 3 == 0:
+                        cua_so_loi = self.phat_hien_cua_so_cai_dat(process.pid)
+                        if cua_so_loi:
+                            ten_cs = " | ".join(cua_so_loi)
+                            self.xu_ly_log(f"  ⚠️ Thất bại: Cửa sổ '{ten_cs}' bị bung ra màn hình!")
+                            self.xu_ly_log("  -> Đang dập tiến trình để chuyển sang tham số dự phòng tiếp theo...")
+                            self.huy_tien_trinh_va_con(process.pid)
+                            bi_bung_giao_dien = True
+                            break 
+                    
+                    for hwnd in lay_danh_sach_explorer():
+                        if hwnd not in explorer_cu: dong_cua_so(hwnd)
+                    time.sleep(1)
+                
+                if not bi_bung_giao_dien:
+                    if process.poll() is None:
+                        self.xu_ly_log("  -> Cảnh báo: Quá 10 phút cài đặt, đang ép thoát.")
+                        self.huy_tien_trinh_va_con(process.pid)
+                    cai_dat_thanh_cong = True
+                    break 
+
+            except Exception as e:
+                self.xu_ly_log(f"❌ Lỗi kĩ thuật khi chạy lệnh: {str(e)}")
+                
+        self.don_rac_he_thong()
+        for hwnd in lay_danh_sach_explorer():
+            if hwnd not in explorer_cu: dong_cua_so(hwnd)
+                
+        if cai_dat_thanh_cong:
+            self.xu_ly_log(f"✔️ Cài đặt im lặng thành công: {pm.ten}")
             self.cap_nhat_giao_dien.emit(pm, "Hoàn tất!", 100)
-        except Exception:
+        else:
+            self.xu_ly_log(f"❌ Bó tay: Đã thử hết toàn bộ tham số nhưng {pm.ten} vẫn không chịu chạy ẩn.")
             self.cap_nhat_giao_dien.emit(pm, "Lỗi cài đặt", 0)
 
     def lay_id_drive(self, url):
@@ -265,17 +435,14 @@ class LuongCaiDat(QThread):
         duoi_file_goc = Path(parsed_url.path).suffix.lower()
         
         danh_sach_duoi_hop_le = ['.exe', '.msi', '.zip', '.rar', '.7z', '.msixbundle', '.appx']
-        
-        if duoi_file_goc in danh_sach_duoi_hop_le:
-            duoi_su_dung = duoi_file_goc
-        else:
-            duoi_su_dung = ".exe"
+        duoi_su_dung = duoi_file_goc if duoi_file_goc in danh_sach_duoi_hop_le else ".exe"
 
         ten_file_md = ''.join(c for c in pm.ten if c.isalnum() or c in ' -_') + duoi_su_dung
         duong_dan = THU_MUC_LUU_TRU / ten_file_md
         id_drive = self.lay_id_drive(pm.url_tai)
 
         if id_drive:
+            self.xu_ly_log(f"  -> Link Google Drive ID: {id_drive}")
             for key in DANH_SACH_KHOA_API:
                 try:
                     self.cap_nhat_giao_dien.emit(pm, "Quét Drive...", 10)
@@ -286,31 +453,39 @@ class LuongCaiDat(QThread):
                             duong_dan = THU_MUC_LUU_TRU / tg
 
                     if duong_dan.exists() and duong_dan.stat().st_size > 500 * 1024:
+                        self.xu_ly_log(f"  -> File đã tồn tại: {duong_dan.name} ({round(duong_dan.stat().st_size / 1024 / 1024, 1)} MB)")
                         self.cap_nhat_giao_dien.emit(pm, "Đã có sẵn bộ cài", 100)
                         return duong_dan
 
+                    self.xu_ly_log("  -> Đang tải file từ Google Drive...")
                     response = requests.get(f"https://www.googleapis.com/drive/v3/files/{id_drive}?alt=media&key={key}", stream=True, timeout=10)
                     
                     content_type = response.headers.get('Content-Type', '').lower()
                     if 'text/html' in content_type:
+                        self.xu_ly_log("❌ Lỗi: Link Drive yêu cầu đăng nhập hoặc trỏ tới HTML.")
                         self.cap_nhat_giao_dien.emit(pm, "Lỗi Link (Link dẫn tới trang web)", 0)
                         return None
                         
                     if response.status_code == 200:
                         if self.thuc_hien_ghi_file(pm, response, duong_dan): return duong_dan
-                    elif response.status_code in [403, 429]: continue 
+                    elif response.status_code in [403, 429]: 
+                        self.xu_ly_log("  -> Quá giới hạn API Drive, thử Key khác...")
+                        continue 
                 except: continue
             self.cap_nhat_giao_dien.emit(pm, "Lỗi kết nối API", 0)
             return None 
         else:
             if duong_dan.exists() and duong_dan.stat().st_size > 500 * 1024:
+                self.xu_ly_log(f"  -> File đã tồn tại: {duong_dan.name}")
                 self.cap_nhat_giao_dien.emit(pm, "Đã có sẵn bộ cài", 100)
                 return duong_dan
             try:
+                self.xu_ly_log(f"  -> Đang tải file Direct Link...")
                 response = requests.get(pm.url_tai, stream=True, timeout=10)
                 
                 content_type = response.headers.get('Content-Type', '').lower()
                 if 'text/html' in content_type:
+                    self.xu_ly_log("❌ Lỗi: URL trả về trang web HTML.")
                     self.cap_nhat_giao_dien.emit(pm, "Lỗi Link (Link dẫn tới trang web)", 0)
                     return None
                     
@@ -323,7 +498,8 @@ class LuongCaiDat(QThread):
                             
                 if response.status_code == 200:
                     if self.thuc_hien_ghi_file(pm, response, duong_dan): return duong_dan
-            except: pass
+            except Exception as e: 
+                self.xu_ly_log(f"❌ Lỗi tải xuống: {str(e)}")
         self.cap_nhat_giao_dien.emit(pm, "Lỗi tải xuống", 0)
         return None
 
@@ -355,12 +531,14 @@ class LuongCaiDat(QThread):
         if duong_dan.exists() and duong_dan.stat().st_size < 500 * 1024:
             try: duong_dan.unlink(missing_ok=True)
             except: pass
+            self.xu_ly_log("❌ Lỗi: File tải về quá nhỏ hoặc bị hỏng")
             self.cap_nhat_giao_dien.emit(pm, "Lỗi: File tải về quá nhỏ/bị hỏng", 0)
             return False
             
         return True
 
     def don_rac_he_thong(self):
+        self.xu_ly_log("  -> Dọn dẹp tiến trình phụ (cmd, notepad)...")
         for proc in psutil.process_iter(['name']):
             try:
                 if proc.info['name'] and proc.info['name'].lower() in ['cmd.exe', 'notepad.exe', 'hh.exe']:
@@ -387,7 +565,7 @@ class VietToolboxApp(QMainWindow):
         self.tai_du_lieu_csv()
 
     def thiet_lap_giao_dien(self):
-        self.setWindowTitle("VietToolbox Dashboard - V709 (Python Edition)")
+        self.setWindowTitle("VietToolbox Dashboard - V711 (Auto-Brute-Force Silent)")
         self.setMinimumSize(1150, 780)
         self.setStyleSheet("background-color: #0B1120; font-family: 'Segoe UI';")
 
@@ -396,7 +574,6 @@ class VietToolboxApp(QMainWindow):
         layout_chinh.setContentsMargins(0, 0, 0, 0)
         layout_chinh.setSpacing(0)
 
-        # PANAL TRÁI
         panel_trai = QFrame()
         panel_trai.setFixedWidth(300)
         panel_trai.setStyleSheet("background-color: #0F172A; color: white;")
@@ -487,13 +664,14 @@ class VietToolboxApp(QMainWindow):
         layout_log.addWidget(self.scroll_log)
         layout_trai.addWidget(frame_log, 1)
 
-        # PANEL PHẢI
         panel_phai = QWidget()
         self.layout_phai = QVBoxLayout(panel_phai)
         self.layout_phai.setContentsMargins(20, 20, 20, 20)
+        self.layout_phai.setSpacing(15)
 
         khung_tieu_de = QWidget()
         layout_td = QHBoxLayout(khung_tieu_de)
+        layout_td.setContentsMargins(0, 0, 0, 0)
         
         btn_chon_het = QPushButton("☑ Chọn tất cả")
         btn_bo_chon = QPushButton("☐ Bỏ chọn")
@@ -529,7 +707,25 @@ class VietToolboxApp(QMainWindow):
         self.khung_danh_sach.setStyleSheet("background-color: transparent;")
         self.layout_danh_sach = QVBoxLayout(self.khung_danh_sach) 
         self.scroll_area.setWidget(self.khung_danh_sach)
-        self.layout_phai.addWidget(self.scroll_area)
+        self.layout_phai.addWidget(self.scroll_area, stretch=7) 
+
+        self.txt_log_terminal = QPlainTextEdit()
+        self.txt_log_terminal.setReadOnly(True)
+        self.txt_log_terminal.setPlaceholderText("Terminal Log: Chờ lệnh thực thi...")
+        self.txt_log_terminal.setStyleSheet("""
+            QPlainTextEdit {
+                background-color: #0F172A;
+                color: #A7F3D0;
+                border: 1px solid #334155;
+                border-radius: 6px;
+                padding: 10px;
+                font-family: 'Consolas', 'Courier New', monospace;
+                font-size: 12px;
+            }
+            QScrollBar:vertical { width: 8px; background-color: #0F172A; margin: 0px; } 
+            QScrollBar::handle:vertical { background-color: #475569; border-radius: 4px; }
+        """)
+        self.layout_phai.addWidget(self.txt_log_terminal, stretch=3) 
 
         layout_chinh.addWidget(panel_trai)
         layout_chinh.addWidget(panel_phai)
@@ -546,6 +742,7 @@ class VietToolboxApp(QMainWindow):
         self.lbl_thoi_gian.setText("⏱ Thời gian: 00:00")
         self.prg_tong.setValue(0)
         self.lbl_phan_tram_tong.setText("Tổng tiến trình: 0%")
+        self.txt_log_terminal.clear() 
 
         for pm in self.danh_sach_phan_mem:
             pm.chon = False
@@ -718,6 +915,11 @@ class VietToolboxApp(QMainWindow):
             self.danh_sach_ui[pm]['chk'].setChecked(trang_thai)
         self.cap_nhat_danh_sach_chon()
 
+    def ghi_terminal_log(self, text):
+        self.txt_log_terminal.appendPlainText(text)
+        scrollbar = self.txt_log_terminal.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
+
     def cap_nhat_ui_phan_mem(self, pm, txt_trang_thai, phan_tram):
         pm.tien_trinh = phan_tram
         
@@ -742,6 +944,7 @@ class VietToolboxApp(QMainWindow):
         self.ds_dang_cai = [pm for pm in self.danh_sach_phan_mem if pm.chon]
         if not self.ds_dang_cai: return
 
+        self.txt_log_terminal.clear() 
         self.prg_tong.setValue(0)
         self.lbl_phan_tram_tong.setText("Tổng tiến trình: 0%")
         
@@ -759,6 +962,7 @@ class VietToolboxApp(QMainWindow):
         self.luong_cai_dat = LuongCaiDat(self.ds_dang_cai)
         self.luong_cai_dat.cap_nhat_giao_dien.connect(self.cap_nhat_ui_phan_mem)
         self.luong_cai_dat.hoan_thanh_toan_bo.connect(self.ket_thuc_cai_dat)
+        self.luong_cai_dat.ghi_log.connect(self.ghi_terminal_log) 
         self.luong_cai_dat.start()
 
     def huy_cai_dat(self):
@@ -778,9 +982,6 @@ class VietToolboxApp(QMainWindow):
         self.btn_huy.setEnabled(False)
         self.btn_huy.setText("⏹ HỦY TIẾN TRÌNH")
 
-    # ==============================================================================
-    # SỰ KIỆN ĐÓNG PHẦN MỀM - DỌN SẠCH FILE RÁC
-    # ==============================================================================
     def closeEvent(self, event):
         try:
             if THU_MUC_LUU_TRU.exists():
