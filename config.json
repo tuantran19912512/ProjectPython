@@ -48,6 +48,13 @@
 		"mau_sac": "#4CAF50",
 		"ten_file": "sualoiLanShare.py",
 		"link_tai": "https://raw.githubusercontent.com/tuantran19912512/Lanprint/refs/heads/main/sualoiLanShare.py"
+	},
+	{
+		"ten_nut": "8. WINDOWS CLEAN UP",
+		"mau_sac": "#4CAF50",
+		"ten_file": "WindowsCleanUp.py",
+		"link_tai": "https://raw.githubusercontent.com/tuantran19912512/ProjectPython/refs/heads/main/WindowsCleanUp.py"
 	}
+	
     
 ]
