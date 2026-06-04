@@ -1,4 +1,4 @@
-# YEU_CAU_THU_VIEN: requests, psutil
+# YEU_CAU_THU_VIEN: requests, psutil, PyQt6
 import sys
 import os
 import ctypes
