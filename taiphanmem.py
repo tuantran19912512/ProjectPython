@@ -1,4 +1,4 @@
-# YEU_CAU_THU_VIEN: requests
+# YEU_CAU_THU_VIEN: requests, psutil
 import sys
 import os
 import ctypes
